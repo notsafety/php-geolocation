@@ -748,11 +748,11 @@ class Database {
     $this->date           = date('Y-m-d', strtotime("{$this->year}-{$this->month}-{$this->day}"));
     //
     $this->ipCount[4]     = $this->readWord(6);
-    $this->ipBase[4]      = $this->readWord(10);		//hjlim readword
+    $this->ipBase[4]      = $this->readWord(10);    //hjlim readword
     $this->ipCount[6]     = $this->readWord(14);
     $this->ipBase[6]      = $this->readWord(18);
-	$this->indexBaseAddr[4] = $this->readWord(22);		//hjlim
-	$this->indexBaseAddr[6] = $this->readWord(26);		//hjlim
+  $this->indexBaseAddr[4] = $this->readWord(22);    //hjlim
+  $this->indexBaseAddr[6] = $this->readWord(26);    //hjlim
   }
 
   /**
@@ -796,14 +796,14 @@ class Database {
     // Get actual file path
     $rfile = realpath($file);
 
-	// If the file cannot be found, except away
+  // If the file cannot be found, except away
     if (false === $rfile) {
       throw new \Exception(__CLASS__ . ": Database file '{$file}' does not seem to exist.", self::EXCEPTION_DBFILE_NOT_FOUND);
     }
 
     $shmKey = self::getShmKey($rfile);
 
-	// Try to open the memory segment for writing
+  // Try to open the memory segment for writing
     $shmId  = @shmop_open($shmKey, 'w', 0, 0);
     if (false === $shmId) {
       throw new \Exception(__CLASS__ . ": Unable to access shared memory block '{$shmKey}' for writing.", self::EXCEPTION_SHMOP_WRITING_FAILED);
@@ -830,14 +830,14 @@ class Database {
     if (null === self::$memoryLimit) {
       $limit = ini_get('memory_limit');
 
-	  // Feal with defaults
+    // Feal with defaults
       if ('' === (string) $limit) {
         $limit = '128M';
       }
 
       $value = (int) $limit;
 
-	  // Deal with "no-limit"
+    // Deal with "no-limit"
       if ($value < 0) {
         $value = false;
       } else {
@@ -875,7 +875,7 @@ class Database {
       // Try to get current path
       $current = realpath(dirname(__FILE__));
 
-	  if (false === $current) {
+    if (false === $current) {
         throw new \Exception(__CLASS__ . ": Cannot determine current path.", self::EXCEPTION_NO_PATH);
       }
       // Try each database in turn
@@ -986,13 +986,13 @@ class Database {
     if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
       return [4, sprintf('%u', ip2long($ip))];
     } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-	  $result = 0;
+    $result = 0;
 
-	  foreach (str_split(bin2hex(inet_pton($ip)), 8) as $word) {
+    foreach (str_split(bin2hex(inet_pton($ip)), 8) as $word) {
         $result = bcadd(bcmul($result, '4294967296', 0), self::wrap32(hexdec($word)), 0);
       }
 
-	  return [6, $result];
+    return [6, $result];
     } else {
       // Invalid IP address, return falses
       return [false, false];
@@ -1008,18 +1008,18 @@ class Database {
    * @return string
    */
   private static function bcBin2Dec($data) {
-	$parts = array(
-		unpack('V', substr($data, 12, 4)),
-		unpack('V', substr($data, 8, 4)),
-		unpack('V', substr($data, 4, 4)),
-		unpack('V', substr($data, 0, 4)),
-	);
+  $parts = array(
+    unpack('V', substr($data, 12, 4)),
+    unpack('V', substr($data, 8, 4)),
+    unpack('V', substr($data, 4, 4)),
+    unpack('V', substr($data, 0, 4)),
+  );
 
-	foreach($parts as &$part)
-		if($part[1] < 0)
-			$part[1] += 4294967296;
+  foreach($parts as &$part)
+    if($part[1] < 0)
+      $part[1] += 4294967296;
 
-	$result = bcadd(bcadd(bcmul($parts[0][1], bcpow(4294967296, 3)), bcmul($parts[1][1], bcpow(4294967296, 2))), bcadd(bcmul($parts[2][1], 4294967296), $parts[3][1]));
+  $result = bcadd(bcadd(bcmul($parts[0][1], bcpow(4294967296, 3)), bcmul($parts[1][1], bcpow(4294967296, 2))), bcadd(bcmul($parts[2][1], 4294967296), $parts[3][1]));
 
     return $result;
   }
@@ -1066,7 +1066,7 @@ class Database {
     // Get the actual pointer to the string's head
     $spos = $this->readWord($pos) + $additional;
 
-	// Read as much as the length (first "string" byte) indicates
+  // Read as much as the length (first "string" byte) indicates
     return $this->read($spos + 1, $this->readByte($spos + 1));
   }
 
@@ -1482,36 +1482,36 @@ class Database {
     $high   = $this->ipCount[$version];
     $low    = 0;
 
-	//hjlim
-	$indexBaseStart = $this->indexBaseAddr[$version];
-	if ($indexBaseStart > 0){
-		$indexPos = 0;
-		switch($version){
-			case 4:
-				$ipNum1_2 = intval($ipNumber / 65536);
-				$indexPos = $indexBaseStart + ($ipNum1_2 << 3);
+  //hjlim
+  $indexBaseStart = $this->indexBaseAddr[$version];
+  if ($indexBaseStart > 0){
+    $indexPos = 0;
+    switch($version){
+      case 4:
+        $ipNum1_2 = intval($ipNumber / 65536);
+        $indexPos = $indexBaseStart + ($ipNum1_2 << 3);
 
-				break;
+        break;
 
-			case 6:
-				$ipNum1 = intval(bcdiv($ipNumber, bcpow('2', '112')));
-				$indexPos = $indexBaseStart + ($ipNum1 << 3);
+      case 6:
+        $ipNum1 = intval(bcdiv($ipNumber, bcpow('2', '112')));
+        $indexPos = $indexBaseStart + ($ipNum1 << 3);
 
-				break;
+        break;
 
-			default:
-				return false;
-		}
+      default:
+        return false;
+    }
 
-		$low = $this->readWord($indexPos);
-		$high = $this->readWord($indexPos + 4);
-	}
+    $low = $this->readWord($indexPos);
+    $high = $this->readWord($indexPos + 4);
+  }
 
     // as long as we can narrow down the search...
-	while ($low <= $high) {
+  while ($low <= $high) {
       $mid     = (int) ($low + (($high - $low) >> 1));
 
-	  // Read IP ranges to get boundaries
+    // Read IP ranges to get boundaries
       $ip_from = $this->readIp($version, $base + $width * $mid);
       $ip_to   = $this->readIp($version, $base + $width * ($mid + 1));
 
@@ -1582,14 +1582,14 @@ class Database {
    * Return the version of module
    */
   public function getModuleVersion() {
-	return self::VERSION;
+  return self::VERSION;
   }
 
   /**
    * Return the version of module
    */
   public function getDatabaseVersion() {
-	return $this->year . '.' . $this->month . '.' . $this->day;
+  return $this->year . '.' . $this->month . '.' . $this->day;
   }
 
   /**
