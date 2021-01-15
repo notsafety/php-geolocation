@@ -24,4 +24,4 @@ The easiest way is to fork this repository on GitHub, modify existing lines, or 
 
 ## Questions or feedback?
 
-You can either open an issue here on GitHub, or [Message Me](https://m.me/vickom.morozov).
+You can either open an issue here on GitHub
